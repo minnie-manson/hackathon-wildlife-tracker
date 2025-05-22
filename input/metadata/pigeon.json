@@ -1,0 +1,25 @@
+{
+    "format": {
+        "filename": "input/videos/pigeon.mp4",
+        "nb_streams": 2,
+        "nb_programs": 0,
+        "nb_stream_groups": 0,
+        "format_name": "mov,mp4,m4a,3gp,3g2,mj2",
+        "format_long_name": "QuickTime / MOV",
+        "start_time": "0.000000",
+        "duration": "1.770646",
+        "size": "5213325",
+        "bit_rate": "23554454",
+        "probe_score": 100,
+        "tags": {
+            "major_brand": "mp42",
+            "minor_version": "0",
+            "compatible_brands": "isommp42",
+            "creation_time": "2025-05-22T10:47:59.000000Z",
+            "location": "+51.5162-000.1402/",
+            "location-eng": "+51.5162-000.1402/",
+            "com.android.version": "14",
+            "com.android.capture.fps": "30.000000"
+        }
+    }
+}

@@ -6,6 +6,7 @@ from pathlib import Path
 from decimal import Decimal
 from typing import Any
 
+
 def process_videos(video_directory: str) -> dict:
     """
     - Extracts a video into a folder of images
@@ -14,8 +15,11 @@ def process_videos(video_directory: str) -> dict:
     """
     video_files = os.listdir(video_directory)
 
-    video_urls = [os.path.join(video_directory, file)
-    for file in video_files if file.lower().endswith((".mp4", ".mov"))]
+    video_urls = [
+        os.path.join(video_directory, file)
+        for file in video_files
+        if file.lower().endswith((".mp4", ".mov"))
+    ]
 
     for video_url in video_urls:
         _get_sighting_data(video_url=video_url)
@@ -28,6 +32,7 @@ def _get_sighting_data(video_url: str) -> dict:
 
     return metadata
 
+
 def _extract_images(video_url: str, metadata: dict) -> list[str]:
     """
     video_url: input/videos/pigeon.mp4
@@ -36,39 +41,35 @@ def _extract_images(video_url: str, metadata: dict) -> list[str]:
     output_folder = Path(f"input/images/{creation_time}")
     output_folder.mkdir(parents=True, exist_ok=True)
 
-
-    cmd = ["ffmpeg",
-           "-i", video_url,
-           "-vf", "fps=10",
-            str(output_folder / "img%04d.png")
-           ]
+    cmd = [
+        "ffmpeg",
+        "-i",
+        video_url,
+        "-vf",
+        "fps=1",
+        str(output_folder / "img%04d.png"),
+    ]
     # Call ffmpeg and exports into folder of images.
     subprocess.run(cmd)
+
 
 def _extract_metadata(video_url: str) -> dict:
     """
     video_url: input/videos/pigeon.mp4
     """
 
-    cmd = [
-        "ffprobe", 
-        "-v", "quiet",
-        "-print_format", 
-        "json", 
-        "-show_format", 
-        video_url
-    ]
+    cmd = ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_format", video_url]
 
     # Call ffprobe and export metadata to output path.
-    result = subprocess.run(cmd,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
-                            text=True)
+    result = subprocess.run(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+    )
 
     metadata = json.loads(result.stdout)
 
     processed_metadata = _process_metadata(metadata=metadata)
     return processed_metadata
+
 
 def _process_metadata(metadata: dict) -> dict[Any]:
     format = metadata["format"]
@@ -79,10 +80,10 @@ def _process_metadata(metadata: dict) -> dict[Any]:
     latitude, longitude = _parse_location(location=location)
 
     metadata = {
-        "creation_time": creation_time, 
-        "latitude": latitude, 
-        "longitude": longitude
-        }
+        "creation_time": creation_time,
+        "latitude": latitude,
+        "longitude": longitude,
+    }
 
     output_path = Path(f"input/images/{creation_time}/metadata.json")
     # Create a folder for the output if it doesn't already exist.
@@ -92,19 +93,19 @@ def _process_metadata(metadata: dict) -> dict[Any]:
         json.dump(metadata, file)
 
     return metadata
-    
+
 
 def _parse_location(location: str) -> tuple[str, str]:
     """
     location = "+51.5162-000.1402/"
     """
-    coord_str = location.strip('/')
+    coord_str = location.strip("/")
 
     # Skip the first +- and find the second sign.
     for i in range(1, len(coord_str)):
-        if coord_str[i] in '+-':
+        if coord_str[i] in "+-":
             latitude = coord_str[:i]
             longitude = coord_str[i:]
             return latitude, longitude
-    
+
     raise ValueError("Invalid coordinate format")

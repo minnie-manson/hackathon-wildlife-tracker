@@ -5,8 +5,8 @@ import psycopg2
 import base64
 import ast
 import json
-
 import parser
+import supabase_setup
 
 
 LOCAL_DB_NAME = "hackathon_wildlife_tracker_db"
@@ -53,20 +53,32 @@ def analyse_sightings(directory=SIGHTING_FILE_PATH):
             if filename.endswith("metadata.json"):
                 with open(filename, "r") as file:
                     metadata = json.load(file)
-
-            with open(filename, "rb") as f:
-                print(f"\nProcessing {filename} \n")
-                BASE64_IMAGE_DATA = base64.standard_b64encode(f.read()).decode("utf-8")
-                image_type = "image/" + filename.split(".")[-1]
-                if image_type == "image/jpg":
-                    image_type = "image/jpeg"
+            else:
+                with open(filename, "rb") as f:
+                    print(f"\nProcessing {filename} \n")
+                    BASE64_IMAGE_DATA = base64.standard_b64encode(f.read()).decode(
+                        "utf-8"
+                    )
+                    image_type = "image/" + filename.split(".")[-1]
+                    if image_type == "image/jpg":
+                        image_type = "image/jpeg"
 
             if metadata is None:
-                raise ValueError("No metadata found for sighting")
-            
-            result = call_claude(image_data=BASE64_IMAGE_DATA, image_type=image_type, metadata=metadata)
+                continue
+                # raise ValueError("No metadata found for sighting")
 
-            response_data.append(ast.literal_eval(result.text))
+            result = call_claude(
+                image_data=BASE64_IMAGE_DATA, image_type=image_type, metadata=metadata
+            )
+
+            sighting_dict = ast.literal_eval(result.text)
+
+            for key, value in metadata.items():
+                sighting_dict[key] = value
+
+            breakpoint()
+
+            response_data.append(sighting_dict)
 
     return response_data
 
@@ -93,7 +105,8 @@ def call_claude(image_data, image_type, metadata):
                     },
                     {
                         "type": "text",
-                        "text": "What animal is in this image? Please give the response as a dictionary in the following format: {'species': <species>, 'genus': <genus>, 'common_name': <name>}. Do not include any descriptions or explanations. Do not include any line breaks or new lines. Do not include any other text. Just give the dictionary. These animals are United Kingdom species. For example, we do not have Racoons in the UK, we have Badgers instead. ",
+                        "text": "What animal is in this image? Please give the response as a dictionary in the following format: {'species': <species>, 'genus': <genus>, 'name': <name>}. Do not include any descriptions or explanations. Do not include any line breaks or new lines. Do not include any other text. Just give the dictionary. "
+                        + f"Use the following metadata from the image to guide your answer: latitude:{metadata['latitude']} , longitude:{metadata['longitude']}, creation_time: {metadata['creation_time']}.",
                     },
                 ],
             }
@@ -102,6 +115,7 @@ def call_claude(image_data, image_type, metadata):
     print(message.content)
     return message.content[0]
 
+
 parser.process_videos(video_directory=VIDEO_FILE_PATH)
 response_data = analyse_sightings()
 
@@ -109,21 +123,16 @@ common_name = []
 genus = []
 species = []
 for sighting in response_data:
-    common_name.append(sighting["common_name"])
+    common_name.append(sighting["name"])
     genus.append(sighting["genus"])
     species.append(sighting["species"])
 
 df = pd.DataFrame({"name": common_name, "species": species, "genus": genus})
 df.to_csv("output.csv", index=False)
 df.to_json("output.json", orient="records")
+data_dict = df.to_dict(orient="records")
 
 
-with conn:
-    with conn.cursor() as curs:
-        for row in df.itertuples():
-            curs.execute(
-                "INSERT INTO wildlife (name, species, genus) VALUES (%s, %s, %s)",
-                (row.name, row.species, row.genus),
-            )
-conn.commit()
+response = supabase_setup.supabase.table("wildlife").insert(response_data).execute()
+print(response)
 conn.close()

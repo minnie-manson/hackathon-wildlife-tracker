@@ -4,3 +4,4 @@ predictions/*
 **/.DS_Store
 claude-env
 settings.json
+.env

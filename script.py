@@ -86,6 +86,10 @@ def analyse_sightings(directory=SIGHTING_FILE_PATH):
 def call_claude(image_data, image_type, metadata):
     client = anthropic.Anthropic()
 
+    creation_time = metadata["creation_time"]
+    latitude = metadata["latitude"]
+    longitude = metadata["longitude"]
+
     message = client.messages.create(
         model="claude-3-7-sonnet-20250219",
         max_tokens=1000,
@@ -106,7 +110,7 @@ def call_claude(image_data, image_type, metadata):
                     {
                         "type": "text",
                         "text": "What animal is in this image? Please give the response as a dictionary in the following format: {'species': <species>, 'genus': <genus>, 'name': <name>}. Do not include any descriptions or explanations. Do not include any line breaks or new lines. Do not include any other text. Just give the dictionary. "
-                        + f"Use the following metadata from the image to guide your answer: latitude:{metadata['latitude']} , longitude:{metadata['longitude']}, creation_time: {metadata['creation_time']}.",
+                        + f"Use the following metadata from the image to guide your answer: latitude:{latitude} , longitude:{longitude}, creation_time: {creation_time}.",
                     },
                 ],
             }

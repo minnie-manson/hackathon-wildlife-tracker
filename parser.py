@@ -37,8 +37,8 @@ def _extract_images(video_url: str, metadata: dict) -> list[str]:
     """
     video_url: input/videos/pigeon.mp4
     """
-    creation_time = metadata["creation_time"]
-    output_folder = Path(f"input/images/{creation_time}")
+    time_spotted = metadata["time_spotted"]
+    output_folder = Path(f"input/images/{time_spotted}")
     output_folder.mkdir(parents=True, exist_ok=True)
 
     cmd = [
@@ -74,18 +74,18 @@ def _extract_metadata(video_url: str) -> dict:
 def _process_metadata(metadata: dict) -> dict[Any]:
     format = metadata["format"]
 
-    creation_time = format["tags"]["creation_time"]
+    time_spotted = format["tags"]["creation_time"]
 
     location = format["tags"]["location"]
     latitude, longitude = _parse_location(location=location)
 
     metadata = {
-        "creation_time": creation_time,
+        "time_spotted": time_spotted,
         "latitude": latitude,
         "longitude": longitude,
     }
 
-    output_path = Path(f"input/images/{creation_time}/metadata.json")
+    output_path = Path(f"input/images/{time_spotted}/metadata.json")
     # Create a folder for the output if it doesn't already exist.
     output_path.parent.mkdir(parents=True, exist_ok=True)
 

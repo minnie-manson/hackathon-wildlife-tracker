@@ -5,3 +5,4 @@ predictions/*
 claude-env
 settings.json
 .env
+__pycache__/*

@@ -47,12 +47,13 @@ def analyse_sightings(directory=SIGHTING_FILE_PATH):
 
     for sighting in os.listdir(directory):
         sighting = os.path.join(directory, sighting)
+        metadata = None
         for filename in os.listdir(sighting):
             filename = os.path.join(sighting, filename)
-            metadata = None
             if filename.endswith("metadata.json"):
                 with open(filename, "r") as file:
                     metadata = json.load(file)
+                continue
             else:
                 with open(filename, "rb") as f:
                     print(f"\nProcessing {filename} \n")
@@ -64,8 +65,7 @@ def analyse_sightings(directory=SIGHTING_FILE_PATH):
                         image_type = "image/jpeg"
 
             if metadata is None:
-                continue
-                # raise ValueError("No metadata found for sighting")
+                raise ValueError("No metadata found for sighting")
 
             result = call_claude(
                 image_data=BASE64_IMAGE_DATA, image_type=image_type, metadata=metadata
@@ -75,8 +75,6 @@ def analyse_sightings(directory=SIGHTING_FILE_PATH):
 
             for key, value in metadata.items():
                 sighting_dict[key] = value
-
-            breakpoint()
 
             response_data.append(sighting_dict)
 
@@ -106,7 +104,7 @@ def call_claude(image_data, image_type, metadata):
                     {
                         "type": "text",
                         "text": "What animal is in this image? Please give the response as a dictionary in the following format: {'species': <species>, 'genus': <genus>, 'name': <name>}. Do not include any descriptions or explanations. Do not include any line breaks or new lines. Do not include any other text. Just give the dictionary. "
-                        + f"Use the following metadata from the image to guide your answer: latitude:{metadata['latitude']} , longitude:{metadata['longitude']}, creation_time: {metadata['creation_time']}.",
+                        + f"Use the following metadata from the image to guide your answer: latitude:{metadata['latitude']} , longitude:{metadata['longitude']}, time_spotted: {metadata['time_spotted']}.",
                     },
                 ],
             }
